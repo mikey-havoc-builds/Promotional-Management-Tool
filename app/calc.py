@@ -4,6 +4,7 @@ import datetime as dt
 from zoneinfo import ZoneInfo
 
 TZ = ZoneInfo("Pacific/Auckland")
+CDC_PLANNED_WAREHOUSES = ("155-4007", "155-4008")
 
 
 def xl_round(x, nd=0):
@@ -196,14 +197,17 @@ def preview(cur, f):
                    WHERE s.product_code=%s AND l.warehouse_type='CDC'""", (code,))
     cdc_soh = n(cur.fetchone()["q"])
 
-    cur.execute("""SELECT count(*) c FROM replen_settings r WHERE r.product_code=%s AND r.range_type IS NOT NULL
-                   AND upper(coalesce(r.stopped_for_purchase,'')) <> 'YES'""", (code,))
+    # Ranged locations: Core Range or Local Range rows on Replen Settings
+    cur.execute("""SELECT count(*) c FROM replen_settings WHERE product_code=%s
+                   AND lower(trim(range_type)) IN ('core range','local range')""", (code,))
     ranged_locs = cur.fetchone()["c"]
-    cur.execute("""SELECT EXISTS(SELECT 1 FROM inventory_monthly i JOIN locations l ON l.code=i.location_code
-                   WHERE i.product_code=%s AND l.warehouse_type='CDC') OR
-                   EXISTS(SELECT 1 FROM location_stock s JOIN locations l ON l.code=s.location_code
-                   WHERE s.product_code=%s AND l.warehouse_type='CDC') e""", (code, code))
+    # In CDC: the product has a Planned range at one of the CDC warehouses 155-4007 / 155-4008
+    cur.execute("""SELECT EXISTS(SELECT 1 FROM replen_settings WHERE product_code=%s
+                   AND location_code = ANY(%s) AND lower(range_type) LIKE '%%planned%%') e""", (code, list(CDC_PLANNED_WAREHOUSES)))
     in_cdc = "Yes" if cur.fetchone()["e"] else "No"
+    # Variants: unique product (variant) codes on Replen Settings for the selected product
+    cur.execute("SELECT count(DISTINCT product_code) c FROM replen_settings WHERE product_code=%s", (code,))
+    variants = cur.fetchone()["c"]
 
     # --- promo history
     cur.execute("SELECT promo_type, discount_pct, promo_qty FROM promotions WHERE product_code=%s AND promo_month=%s", (code, ly_month))
@@ -235,7 +239,7 @@ def preview(cur, f):
     return {
         "product": {k: prod[k] for k in ("product_code", "description", "l1", "l2", "l3", "vendor", "product_owner",
                                          "primary_sector", "classification", "national_price", "cost_price", "moq", "lifecycle_state")},
-        "ranged_locations": ranged_locs, "in_cdc": in_cdc,
+        "ranged_locations": ranged_locs, "in_cdc": in_cdc, "variants": variants,
         "ly": {"qty": n(ly["q"]), "rev": n(ly["r"]), "gm": n(ly["g"]), "soh_qty_retail": n(inv["rq"]),
                "soh_val_retail": n(inv["rv"]), "soh_qty_cdc": n(inv["cq"]), "soh_val_cdc": n(inv["cv"])},
         "promo": {"qty": promo_qty, "rev": promo_rev, "gm": promo_gm, "price": price,

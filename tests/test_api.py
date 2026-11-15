@@ -88,3 +88,18 @@ def test_soh_increase_is_over_current_on_hand(client):
             assert loc["soh"] == 6 and loc["current_soh"] == oh and loc["increase_qty"] == inc
             assert r["change"]["soh_qty_retail"] == inc
         c.execute("UPDATE location_stock SET on_hand_qty=2 WHERE product_code='abc' AND location_code='123'"); c.commit()
+
+
+def test_selection_counts(client):   # keep last: it rewrites abc's replen rows
+    import os, psycopg
+    with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+        c.execute("DELETE FROM replen_settings WHERE product_code='abc'")
+        c.execute("INSERT INTO locations(code) VALUES ('155-4007'),('155-4008') ON CONFLICT DO NOTHING")
+        for loc, rng in (("123", "Core Range"), ("234", "Local Range"), ("345", "Delisted"), ("155-4007", "Planned Range")):
+            c.execute("INSERT INTO replen_settings(product_code,location_code,range_type) VALUES ('abc',%s,%s)", (loc, rng))
+        c.commit()
+        r = client.post("/api/preview", json=BASE).json()
+        assert r["ranged_locations"] == 2 and r["in_cdc"] == "Yes" and r["variants"] == 1
+        c.execute("DELETE FROM replen_settings WHERE location_code='155-4007'")
+        c.commit()
+        assert client.post("/api/preview", json=BASE).json()["in_cdc"] == "No"

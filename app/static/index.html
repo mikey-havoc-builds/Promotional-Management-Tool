@@ -7,6 +7,7 @@
  <section class="card"><h2>Selection</h2>
   <div class="row"><label>Month</label><select id="promo_month"></select></div>
   <div class="row"><label>Product</label><input id="product" list="plist" placeholder="Type a code or description" autocomplete="off"><datalist id="plist"></datalist></div>
+  <div class="row"><label># Variants</label><input id="variants" readonly></div>
   <div class="row"><label># Ranged locations</label><input id="ranged" readonly></div>
   <div class="row"><label>In CDC</label><input id="in_cdc" readonly></div>
   <div class="row"><label># SKUs in hotspot</label><input id="skus_in_hotspot" readonly></div>
@@ -107,7 +108,7 @@ async function refresh(){
   const r=await api("/api/preview",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload())});
   if(!r.ok){show("err",r.data.detail||"Preview failed");return}
   const d=r.data,p=d.product;
-  $("ranged").value=d.ranged_locations;$("in_cdc").value=d.in_cdc;$("skus_in_hotspot").value=$("hotspot").value?d.skus_in_hotspot:"";
+  $("variants").value=d.variants;$("ranged").value=d.ranged_locations;$("in_cdc").value=d.in_cdc;$("skus_in_hotspot").value=$("hotspot").value?d.skus_in_hotspot:"";
   $("p_description").value=p.description||"";$("p_cats").value=[p.l1,p.l2,p.l3].filter(Boolean).join(" / ");$("p_vendor").value=p.vendor||"";
   $("p_product_owner").value=p.product_owner||"";$("p_classification").value=p.classification||"";$("p_national_price").value=p.national_price??"";
   $("p_cost_price").value=p.cost_price??"";$("p_moq").value=[p.moq,p.lifecycle_state].filter(v=>v!=null).join(" / ");

@@ -46,6 +46,8 @@ Monthly tables store the month the figures describe (the workbook's `Oct 25 Sale
   defined, e.g. Bargain Bin, every ranged retail location for the product):
   not ranged or stopped for purchase -> 0; Kanban: min pres > floor -> (forecast >= min pres ? min pres + 1 : min pres), else keep floor;
   Forecast: min pres >= forecast -> min pres + 1, else min pres + forecast / 4. "Forecast" is the current system forecast x (1 + uplift).
+* **Selection counts** (from `replen_settings`): *# Ranged locations* = locations with Core Range or Local Range; *In CDC* = Yes if the product has a
+  Planned range at warehouse 155-4007 or 155-4008, else No; *# Variants* = unique product codes for the selected product.
 * **SOH change / added inventory** = new SOH minus the location's current on-hand (`location_stock`), never below 0
   (e.g. new 5 vs on-hand 2 -> +3; new 5 vs on-hand 8 -> 0). The Excel "Change" column for Ave SOH shows the total.
 * **Pre-promotion alerts** (one line each, wording from `alert_definitions`): Negative GM; Lower GM than last year (hidden while
