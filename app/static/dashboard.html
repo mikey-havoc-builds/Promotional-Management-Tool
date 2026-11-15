@@ -1,0 +1,54 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Promo Dashboard</title><link rel="stylesheet" href="/static/style.css"></head><body>
+<header><h1>Promo Management</h1><nav><a href="/">Input form</a><a class="on" href="/dashboard">Dashboard</a></nav></header>
+<main>
+<section class="card"><div class="toolbar">
+ <div><label>Month</label><select id="month"></select></div>
+ <div><label>Window</label><select id="window"><option value="1">Promo month only</option><option value="2">Promo month + next month</option></select></div>
+ <div><label>L1</label><select id="l1"></select></div><div><label>Vendor</label><select id="vendor"></select></div>
+ <div><label>Owner</label><select id="owner"></select></div><div><label>Hotspot</label><select id="hotspot"></select></div>
+ <div><label>Detail level</label><select id="level"><option value="l1">L1</option><option value="vendor">Vendor</option><option value="owner">Owner</option><option value="hotspot">Hotspot</option><option value="promo_type">Promo type</option><option value="product" selected>Product</option><option value="product_warehouse">Product - Warehouse</option></select></div>
+ <div><label>Chart view</label><select id="metric"><option value="qty">Quantity</option><option value="rev">Revenue</option><option value="gm">GM</option></select></div>
+</div></section>
+<div id="empty" class="card hide" style="margin-top:14px">No promotions match these filters.</div>
+<div id="body">
+<div class="kpis" id="kpis"></div>
+<section class="card"><h2 id="chartTitle">Last year vs promo vs actual</h2>
+ <div class="legend"><span><b style="background:var(--ly)"></b>Last year</span><span><b style="background:var(--promo)"></b>Promo forecast</span><span><b style="background:var(--act)"></b>Actual</span></div>
+ <div class="bars" id="bars"></div></section>
+<section class="card" style="margin-top:14px"><h2>Detail</h2><div class="scroll"><table id="tbl"></table></div></section>
+</div></main>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(v,d=0)=>v==null?"-":Number(v).toLocaleString("en-NZ",{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=v=>v==null?"-":"$"+fmt(v);const pct=v=>v==null?"-":fmt(v*100,1)+"%";
+const MET={qty:["Quantity","qty",fmt],rev:["Revenue","rev",money],gm:["GM $","gm",money]};
+async function get(){const q=new URLSearchParams({month:$("month").value,window:$("window").value,level:$("level").value});
+ for(const k of ["l1","vendor","owner","hotspot"])if($(k).value&&$(k).value!=="All")q.set(k,$(k).value);
+ return (await fetch("/api/dashboard?"+q)).json()}
+function opts(id,list,keep){const cur=keep?$(id).value:"All";$(id).innerHTML=["All",...list].map(v=>`<option>${v}</option>`).join("");if(list.includes(cur))$(id).value=cur}
+function kpi(t,ly,pr,ac,f,ratio){const r=pr&&ac?ac/pr:null;return `<div class="card kpi"><h2>${t}</h2><div class="v">${f(ac)}</div><div class="s">Promo ${f(pr)} · LY ${f(ly)}</div><div class="s">${ratio?"Actual vs promo: "+(r==null?"n/a":(ratio==="pts"?fmt((ac-pr)*100,1)+" pts":fmt(r*100,0)+"%")):""}</div></div>`}
+async function render(keepOpts){
+ const d=await get();
+ if(!keepOpts){opts("l1",d.options.l1);opts("vendor",d.options.vendor);opts("owner",d.options.owner);opts("hotspot",d.options.hotspot)}
+ $("empty").classList.toggle("hide",d.promotions>0);$("body").classList.toggle("hide",d.promotions===0);if(!d.promotions)return;
+ const t=d.totals,m=MET[$("metric").value];
+ $("kpis").innerHTML=`<div class="card kpi"><h2>Promotions</h2><div class="v">${d.promotions}</div><div class="s">${d.months.map(x=>x.slice(0,7)).join(" + ")}</div></div>`
+  +kpi("Sales qty",t.ly_qty,t.promo_qty,t.act_qty,fmt,1)+kpi("Revenue",t.ly_rev,t.promo_rev,t.act_rev,money,1)+kpi("GM $",t.ly_gm,t.promo_gm,t.act_gm,money,1)
+  +kpi("GM %",t.ly_gm_pct,t.promo_gm_pct,t.act_gm_pct,pct,"pts")+kpi("Ave SOH qty (retail)",t.ly_soh,t.promo_soh,t.act_soh,v=>fmt(v,0),1);
+ $("chartTitle").textContent=m[0]+": last year vs promo vs actual";
+ const k=m[1],rows=d.rows.slice(0,40),max=Math.max(1,...rows.flatMap(r=>[r["ly_"+k],r["promo_"+k],r["act_"+k]]).map(Math.abs));
+ $("bars").innerHTML=rows.map(r=>`<div><div class="lbl" style="margin-top:6px">${r.label}</div>`+[["ly","--ly"],["promo","--promo"],["act","--act"]].map(([p,c])=>{const v=r[p+"_"+k];return `<div class="bar"><span class="mute">${{ly:"LY",promo:"Promo",act:"Actual"}[p]}</span><i style="width:${Math.max(0,Math.abs(v)/max*100)}%;background:var(${c})"></i><span>${m[2](v)}</span></div>`}).join("")+"</div>").join("");
+ const hdr=["","Promos","LY qty","Promo qty","Actual qty","LY rev","Promo rev","Actual rev","LY GM","Promo GM","Actual GM","Promo GM%","Actual GM%","LY SOH","Promo SOH","Actual SOH"];
+ const line=(r,b)=>`<tr${b?' style="font-weight:650"':""}><td>${r.label}</td><td>${r.promotions??""}</td><td>${fmt(r.ly_qty)}</td><td>${fmt(r.promo_qty)}</td><td>${fmt(r.act_qty)}</td><td>${money(r.ly_rev)}</td><td>${money(r.promo_rev)}</td><td>${money(r.act_rev)}</td><td>${money(r.ly_gm)}</td><td>${money(r.promo_gm)}</td><td>${money(r.act_gm)}</td><td>${pct(r.promo_gm_pct)}</td><td>${pct(r.act_gm_pct)}</td><td>${fmt(r.ly_soh)}</td><td>${fmt(r.promo_soh,1)}</td><td>${fmt(r.act_soh)}</td></tr>`;
+ $("tbl").innerHTML="<thead><tr>"+hdr.map(h=>`<th>${h}</th>`).join("")+"</tr></thead><tbody>"+d.rows.map(r=>line(r)).join("")+line({label:"Total",promotions:d.promotions,...t},1)+"</tbody>"}
+(async()=>{
+ const months=(await (await fetch("/api/months")).json()).months;
+ const l=await (await fetch("/api/lists")).json();const today=l.today.slice(0,7)+"-01";
+ const all=[...new Set([...months.map(m=>m.slice(0,10)),today])].sort();
+ $("month").innerHTML=all.map(m=>`<option value="${m}">${new Date(m+"T00:00:00").toLocaleString("en-NZ",{month:"short",year:"numeric"})}</option>`).join("");
+ $("month").value=months.length?months[months.length-1].slice(0,10):today;
+ await render(false);
+ for(const id of ["l1","vendor","owner","hotspot","level","metric"])$(id).onchange=()=>render(true);
+ for(const id of ["month","window"])$(id).onchange=()=>render(false)})();
+</script></body></html>
