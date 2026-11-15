@@ -170,6 +170,8 @@ def preview(cur, f):
     pres = {"Small": f.get("pres_qty_small"), "Medium": f.get("pres_qty_medium"), "Large": f.get("pres_qty_large")}
     cur.execute("SELECT location_code, range_type, replen_method, stopped_for_purchase, planning_floor FROM replen_settings WHERE product_code=%s", (code,))
     rs = {r["location_code"]: r for r in cur.fetchall()}
+    cur.execute("SELECT location_code, on_hand_qty FROM location_stock WHERE product_code=%s", (code,))
+    onhand = {r["location_code"]: n(r["on_hand_qty"]) for r in cur.fetchall()}
     cur.execute("SELECT location_code, qty FROM forecast_monthly WHERE kind='current' AND product_code=%s AND month=%s", (code, month))
     fcs = {r["location_code"]: n(r["qty"]) for r in cur.fetchall()}
 
@@ -181,12 +183,13 @@ def preview(cur, f):
         minp = n(pres.get(b["size"]))
         fcu = xl_round(fcs.get(b["code"], 0) * (1 + eff_uplift))
         soh = soh_for_location(minp, floor, r.get("replen_method"), fcu, ranged, r.get("stopped_for_purchase"))
-        inc = max(0.0, soh - floor)
+        cur_soh = onhand.get(b["code"], 0.0)
+        inc = max(0.0, soh - cur_soh)      # increase over current actual SOH (not over the planning floor)
         soh_total += soh
         added_qty += inc
         locs.append({"code": b["code"], "name": b["name"], "size": b["size"], "min_pres": minp,
                      "replen_method": r.get("replen_method"), "floor": floor, "uplift_forecast": fcu,
-                     "soh": soh, "increase_qty": inc, "increase_value": inc * n(prod["cost_price"]),
+                     "current_soh": cur_soh, "soh": soh, "increase_qty": inc, "increase_value": inc * n(prod["cost_price"]),
                      "range": r.get("range_type"), "stopped": r.get("stopped_for_purchase")})
 
     cur.execute("""SELECT COALESCE(SUM(s.on_hand_qty),0) q FROM location_stock s JOIN locations l ON l.code=s.location_code
@@ -239,7 +242,8 @@ def preview(cur, f):
                   "gm_pct": (promo_gm / promo_rev) if promo_rev else None,
                   "soh_qty_retail": soh_total, "soh_val_retail": soh_total * n(prod["cost_price"]),
                   "effective_uplift": eff_uplift},
-        "change": {"qty": promo_qty - n(ly["q"]), "rev": promo_rev - n(ly["r"]), "gm": promo_gm - n(ly["g"])},
+        "change": {"qty": promo_qty - n(ly["q"]), "rev": promo_rev - n(ly["r"]), "gm": promo_gm - n(ly["g"]),
+                   "soh_qty_retail": added_qty, "soh_val_retail": added_qty * n(prod["cost_price"])},
         "retail_forecast": retail_fc, "cdc_soh": cdc_soh, "added_inventory_qty": added_qty,
         "added_inventory_value": added_qty * n(prod["cost_price"]),
         "locations": locs, "alerts": alerts, "skus_in_hotspot": in_hotspot,

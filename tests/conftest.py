@@ -19,6 +19,8 @@ def database():
         c.execute((ROOT / "db" / "schema.sql").read_text())
     from app import importer
     importer.load(str(ROOT / "excel" / "MM_Promo_Tool.xlsx"), reset=True)
+    with psycopg.connect(os.environ["DATABASE_URL"]) as c:       # the sample workbook has no on-hand stock: seed some
+        c.execute("INSERT INTO location_stock VALUES ('abc','123',2,18),('abc','234',20,180)")
     yield
 
 

@@ -73,3 +73,18 @@ def test_pages_and_lists(client):
     assert client.get("/").status_code == 200 and client.get("/dashboard").status_code == 200
     l = client.get("/api/lists").json()
     assert "Discount" in l["promo_type"] and any(p["product_code"] == "abc" for p in l["products"])
+
+
+def test_soh_increase_is_over_current_on_hand(client):
+    import os, psycopg
+    # abc @ 123: Kanban, floor 2, min pres 5 (> floor), forecast 4*(1.2)=5 >= 5 -> new SOH 6
+    body = {**BASE, "pres_qty_small": 5}
+    with psycopg.connect(os.environ["DATABASE_URL"]) as c:
+        for oh, inc in ((2, 4), (8, 0)):
+            c.execute("INSERT INTO location_stock VALUES ('abc','123',%s,NULL) ON CONFLICT (product_code,location_code) DO UPDATE SET on_hand_qty=%s", (oh, oh))
+            c.commit()
+            r = client.post("/api/preview", json=body).json()
+            loc = next(l for l in r["locations"] if l["code"] == "123")
+            assert loc["soh"] == 6 and loc["current_soh"] == oh and loc["increase_qty"] == inc
+            assert r["change"]["soh_qty_retail"] == inc
+        c.execute("UPDATE location_stock SET on_hand_qty=2 WHERE product_code='abc' AND location_code='123'"); c.commit()

@@ -67,7 +67,7 @@
  </section>
 </div>
 
-<section class="card" style="margin-top:14px"><h2>Calculated SOH by location</h2><div class="scroll"><table><thead><tr><th>Location</th><th>Size</th><th>Min pres</th><th>Method</th><th>Floor</th><th>Uplift fcst</th><th>SOH</th><th>Increase qty</th><th>Increase $</th></tr></thead><tbody id="locs"><tr><td colspan="9" class="mute">Select a product</td></tr></tbody></table></div></section>
+<section class="card" style="margin-top:14px"><h2>Calculated SOH by location</h2><div class="scroll"><table><thead><tr><th>Location</th><th>Size</th><th>Min pres</th><th>Method</th><th>Floor</th><th>Current SOH</th><th>Uplift fcst</th><th>New SOH</th><th>Increase qty</th><th>Increase $</th></tr></thead><tbody id="locs"><tr><td colspan="10" class="mute">Select a product</td></tr></tbody></table></div></section>
 
 <section class="card" style="margin-top:14px"><h2>Promotions in selected month - click a row to load it</h2>
  <div class="scroll"><table class="l"><thead><tr><th>Product</th><th>Description</th><th>L1</th><th>Owner</th><th>Vendor</th><th>Type</th><th>Intent</th><th>Hotspot</th></tr></thead><tbody id="plistRows"></tbody></table></div></section>
@@ -115,15 +115,15 @@ async function refresh(){
   const row=(l,a,b,c,f)=>`<tr><td>${l}</td><td>${f(a)}</td><td>${b==null?"":f(b)}</td><td class="${c<0?"neg":""}">${c==null?"":f(c)}</td></tr>`;
   $("hist").innerHTML=row("Sales qty",d.ly.qty,d.promo.qty,d.change.qty,v=>fmt(v))+row("Revenue",d.ly.rev,d.promo.rev,d.change.rev,money)+row("GM",d.ly.gm,d.promo.gm,d.change.gm,money)
    +`<tr><td>GM %</td><td>${d.ly.rev?fmt(d.ly.gm/d.ly.rev*100,1)+"%":""}</td><td>${d.promo.gm_pct==null?"":fmt(d.promo.gm_pct*100,1)+"%"}</td><td></td></tr>`
-   +`<tr><td>Ave SOH qty retail</td><td>${fmt(d.ly.soh_qty_retail)}</td><td>${fmt(d.promo.soh_qty_retail,1)}</td><td></td></tr>`
-   +`<tr><td>Ave SOH $ retail</td><td>${money(d.ly.soh_val_retail)}</td><td>${money(d.promo.soh_val_retail)}</td><td></td></tr>`
+   +`<tr><td>Ave SOH qty retail</td><td>${fmt(d.ly.soh_qty_retail)}</td><td>${fmt(d.promo.soh_qty_retail,1)}</td><td>${fmt(d.change.soh_qty_retail,1)}</td></tr>`
+   +`<tr><td>Ave SOH $ retail</td><td>${money(d.ly.soh_val_retail)}</td><td>${money(d.promo.soh_val_retail)}</td><td>${money(d.change.soh_val_retail)}</td></tr>`
    +`<tr><td>Ave SOH qty CDC</td><td>${fmt(d.ly.soh_qty_cdc)}</td><td></td><td></td></tr><tr><td>Ave SOH $ CDC</td><td>${money(d.ly.soh_val_cdc)}</td><td></td><td></td></tr>`;
   $("h_same").value=d.promo_same_month_ly.yes?`Yes - ${d.promo_same_month_ly.type||""}`:"No";
   $("h_last").value=d.last_promo?`${d.last_promo.month.slice(0,7)} - ${d.last_promo.type}`:"";
   const al=$("alerts");al.className="alerts"+(d.alerts.length?" has":"");
   al.innerHTML=d.alerts.length?d.alerts.map(a=>`<div class="a">${a}</div>`).join(""):`<div class="ok">OK - no pre-promotion alerts</div>`;
-  $("locs").innerHTML=d.locations.length?d.locations.map(l=>`<tr><td>${l.code}${l.name?" "+l.name:""}</td><td>${l.size}</td><td>${fmt(l.min_pres)}</td><td>${l.replen_method||"-"}</td><td>${fmt(l.floor)}</td><td>${fmt(l.uplift_forecast)}</td><td>${fmt(l.soh,1)}</td><td>${fmt(l.increase_qty,1)}</td><td>${money(l.increase_value)}</td></tr>`).join("")
-    :`<tr><td colspan="9" class="mute">No locations for this hotspot</td></tr>`;
+  $("locs").innerHTML=d.locations.length?d.locations.map(l=>`<tr><td>${l.code}${l.name?" "+l.name:""}</td><td>${l.size}</td><td>${fmt(l.min_pres)}</td><td>${l.replen_method||"-"}</td><td>${fmt(l.floor)}</td><td>${fmt(l.current_soh)}</td><td>${fmt(l.uplift_forecast)}</td><td>${fmt(l.soh,1)}</td><td>${fmt(l.increase_qty,1)}</td><td>${money(l.increase_value)}</td></tr>`).join("")
+    :`<tr><td colspan="10" class="mute">No locations for this hotspot</td></tr>`;
   setLock(d.locked)}
 function queue(){clearTimeout(timer);timer=setTimeout(refresh,250)}
 async function loadList(){

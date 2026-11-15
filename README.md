@@ -46,6 +46,8 @@ Monthly tables store the month the figures describe (the workbook's `Oct 25 Sale
   defined, e.g. Bargain Bin, every ranged retail location for the product):
   not ranged or stopped for purchase -> 0; Kanban: min pres > floor -> (forecast >= min pres ? min pres + 1 : min pres), else keep floor;
   Forecast: min pres >= forecast -> min pres + 1, else min pres + forecast / 4. "Forecast" is the current system forecast x (1 + uplift).
+* **SOH change / added inventory** = new SOH minus the location's current on-hand (`location_stock`), never below 0
+  (e.g. new 5 vs on-hand 2 -> +3; new 5 vs on-hand 8 -> 0). The Excel "Change" column for Ave SOH shows the total.
 * **Pre-promotion alerts** (one line each, wording from `alert_definitions`): Negative GM; Lower GM than last year (hidden while
   Negative GM shows); Not enough CDC inventory; Sales less than increased inventory; Forecast less than Promo Qty.
 * **Saving**: type, intent and hotspot required; exactly one of Uplift % / Promo Qty; presentation qty unless Bargain Bin / Shelf only;
