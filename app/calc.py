@@ -212,7 +212,7 @@ def preview(cur, f):
     # --- promo history
     cur.execute("SELECT promo_type, discount_pct, promo_qty FROM promotions WHERE product_code=%s AND promo_month=%s", (code, ly_month))
     same_ly = cur.fetchone()
-    cur.execute("""SELECT promo_month, promo_type, discount_pct, promo_qty FROM promotions
+    cur.execute("""SELECT promo_month, promo_type, uplift_pct, promo_qty FROM promotions
                    WHERE product_code=%s AND promo_month<>%s ORDER BY promo_month DESC LIMIT 1""", (code, month))
     last = cur.fetchone()
     cur.execute("SELECT count(*) c FROM promotions WHERE promo_month=%s AND lower(hotspot)=lower(%s)", (month, f.get("hotspot") or ""))
@@ -255,5 +255,5 @@ def preview(cur, f):
                                 "discount_pct": same_ly and same_ly["discount_pct"],
                                 "qty": same_ly and same_ly["promo_qty"]},
         "last_promo": last and {"month": last["promo_month"].isoformat(), "type": last["promo_type"],
-                                "discount_pct": last["discount_pct"], "qty": last["promo_qty"]},
+                                "uplift_pct": last["uplift_pct"], "qty": last["promo_qty"]},
     }

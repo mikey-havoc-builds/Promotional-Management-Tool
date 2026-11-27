@@ -1,156 +1,188 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Promo Input Form</title><link rel="stylesheet" href="/static/style.css"></head><body>
-<header><h1>Promo Management</h1><nav><a class="on" href="/">Input form</a><a href="/dashboard">Dashboard</a></nav></header>
-<main>
+<title>Promo Input Form</title><link rel="stylesheet" href="/static/sheet.css"></head><body>
+<div class="top"><b>Promo Management</b><nav><a class="on" href="/">Input form</a><a href="/dashboard">Dashboard</a></nav></div>
+<div class="wrap">
+<div class="title">Promo Input Form</div>
+<div id="lock" class="lock">This month is locked (current or past month) - view only.</div>
 <div id="msg" class="msg"></div>
-<div class="grid g3">
- <section class="card"><h2>Selection</h2>
-  <div class="row"><label>Month</label><select id="promo_month"></select></div>
-  <div class="row"><label>Product</label><input id="product" list="plist" placeholder="Type a code or description" autocomplete="off"><datalist id="plist"></datalist></div>
-  <div class="row"><label># Variants</label><input id="variants" readonly></div>
-  <div class="row"><label># Ranged locations</label><input id="ranged" readonly></div>
-  <div class="row"><label>In CDC</label><input id="in_cdc" readonly></div>
-  <div class="row"><label># SKUs in hotspot</label><input id="skus_in_hotspot" readonly></div>
-  <div id="lockNote" class="mute hide">This month is locked (current or past month) - view only.</div>
- </section>
- <section class="card"><h2>Product info</h2>
-  <div class="row"><label>Description</label><input id="p_description" readonly></div>
-  <div class="row"><label>L1 / L2 / L3</label><input id="p_cats" readonly></div>
-  <div class="row"><label>Vendor</label><input id="p_vendor" readonly></div>
-  <div class="row"><label>Owner</label><input id="p_product_owner" readonly></div>
-  <div class="row"><label>Classification</label><input id="p_classification" readonly></div>
-  <div class="row"><label>National price</label><input id="p_national_price" readonly></div>
-  <div class="row"><label>Vendor cost</label><input id="p_cost_price" readonly></div>
-  <div class="row"><label>MOQ / Lifecycle</label><input id="p_moq" readonly></div>
- </section>
- <section class="card"><h2>Alerts</h2><div id="alerts" class="alerts"></div>
-  <h2 style="margin-top:14px">Promo history</h2>
-  <div class="row"><label>Promo same mth LY?</label><input id="h_same" readonly></div>
-  <div class="row"><label>Last promo</label><input id="h_last" readonly></div>
- </section>
+<div class="sheet">
+<div class="main">
+
+<!-- row 1 -->
+<div class="p"><div class="ph">Selection</div>
+ <div class="r"><label>Level</label><div class="v g">Product</div></div>
+ <div class="r"><label>Category</label><div class="v in"><select id="category"></select></div></div>
+ <div class="r"><label>SKU / Vendor Lookup</label><div class="v in"><input id="product" list="plist" placeholder="code or description" autocomplete="off"></div></div>
+ <div class="r"><label>Product Code</label><div class="v calc" id="o_code"></div></div>
+ <datalist id="plist"></datalist></div>
+<div class="p"><div class="ph">Period &amp; Range</div>
+ <div class="r"><label>Month</label><div class="v in"><select id="promo_month"></select></div></div>
+ <div class="r"><label># Variants</label><div class="v calc" id="o_variants"></div></div>
+ <div class="r"><label># Ranged Locations</label><div class="v calc" id="o_ranged"></div></div>
+ <div class="r"><label>In CDC</label><div class="v calc" id="o_cdc"></div></div></div>
+<div class="p"><div class="ph">Alerts</div><div id="alerts"></div></div>
+
+<!-- row 2 -->
+<div class="p"><div class="ph">Product Info</div>
+ <div class="r"><label>L1 Category</label><div class="v calc" id="p_l1"></div></div>
+ <div class="r"><label>L2 Category</label><div class="v calc" id="p_l2"></div></div>
+ <div class="r"><label>L3 Category</label><div class="v calc" id="p_l3"></div></div>
+ <div class="r"><label>Vendor Name</label><div class="v calc" id="p_vendor"></div></div>
+ <div class="r"><label>Product Classification</label><div class="v calc" id="p_classification"></div></div>
+ <div class="r"><label>Product Owner</label><div class="v calc" id="p_product_owner"></div></div>
+ <div class="r"><label>Primary Sector</label><div class="v calc" id="p_primary_sector"></div></div>
+ <div class="r"><label>National Price</label><div class="v calc" id="p_national_price"></div></div>
+ <div class="r"><label>Vendor Cost</label><div class="v calc" id="p_cost_price"></div></div>
+ <div class="r"><label>MOQ</label><div class="v calc" id="p_moq"></div></div>
+ <div class="r"><label>Lifecycle State</label><div class="v calc" id="p_lifecycle_state"></div></div></div>
+<div class="p"><div class="ph">Historical Data</div>
+ <div class="sub c3"><div></div><div>LY</div><div>Promo</div><div>Change</div></div>
+ <div id="hist"></div></div>
+<div class="p"><div class="ph">Promotional Info</div>
+ <div class="r"><label>Promotional Type</label><div class="v in"><select id="promo_type"></select></div></div>
+ <div class="r"><label>Promotional Intent</label><div class="v in"><select id="promo_intent"></select></div></div>
+ <div class="r"><label>Hotspot</label><div class="v in"><select id="hotspot"></select></div></div>
+ <div class="r"><label># SKUs already in Hotspot</label><div class="v g" id="o_skus"></div></div>
+ <div class="r"><label>Promo Cost override</label><div class="v in"><input id="promo_cost_override" type="number" step="any"></div></div>
+ <div class="r"><label>Uplift %</label><div class="v in"><input id="uplift_pct" type="number" step="any" placeholder="e.g. 20"></div></div>
+ <div class="r"><label>Promo Qty</label><div class="v in"><input id="promo_qty_input" type="number" step="any"></div></div>
+ <div class="r"><label>BDF Applied ($)</label><div class="v in"><input id="bdf_applied" type="number" step="any"></div></div>
+ <div class="sub c3"><div style="display:flex;align-items:center;justify-content:flex-start;font-weight:400;background:#fff;color:#111">Presentation Qty (per branch)</div><div>Small</div><div>Medium</div><div>Large</div></div>
+ <div class="r c3"><label></label><div class="v in"><input id="pres_qty_small" type="number"></div><div class="v in"><input id="pres_qty_medium" type="number"></div><div class="v in"><input id="pres_qty_large" type="number"></div></div>
+ <div class="r c3"><label>Product Marketed In</label><div class="v in"><select id="market_in_1"></select></div><div class="v in"><select id="market_in_2"></select></div><div class="v in"><select id="market_in_3"></select></div></div></div>
+
+<!-- row 3 -->
+<div class="p"><div class="ph">Promo Input - Discount</div>
+ <div class="r"><label>Discount ($)</label><div class="v in"><input id="discount_amt" type="number" step="any"></div></div>
+ <div class="r"><label>% Off</label><div class="v in"><input id="discount_pct" type="number" step="any" placeholder="e.g. 10"></div></div>
+ <div class="r"><label>Promo price</label><div class="v g" id="o_price"></div></div></div>
+<div class="p"><div class="ph">Promo Input - Multi-buy x for y</div>
+ <div class="r c2" style="grid-template-columns:30px 1fr 30px 1fr"><label>X1</label><div class="v in"><input id="x4y_qty_1" type="number"></div><label>$Y</label><div class="v in"><input id="x4y_amt_1" type="number" step="any"></div></div>
+ <div class="r c2" style="grid-template-columns:30px 1fr 30px 1fr"><label>X2</label><div class="v in"><input id="x4y_qty_2" type="number"></div><label>$Y</label><div class="v in"><input id="x4y_amt_2" type="number" step="any"></div></div>
+ <div class="r c2" style="grid-template-columns:30px 1fr 30px 1fr"><label>X3</label><div class="v in"><input id="x4y_qty_3" type="number"></div><label>$Y</label><div class="v in"><input id="x4y_amt_3" type="number" step="any"></div></div></div>
+<div class="p"><div class="ph">Promo Input - Multi-buy x and y%</div>
+ <div class="r c2" style="grid-template-columns:30px 1fr 30px 1fr"><label>X1</label><div class="v in"><input id="xy_qty_1" type="number"></div><label>Y%</label><div class="v in"><input id="xy_pct_1" type="number" step="any"></div></div>
+ <div class="r c2" style="grid-template-columns:30px 1fr 30px 1fr"><label>X2</label><div class="v in"><input id="xy_qty_2" type="number"></div><label>Y%</label><div class="v in"><input id="xy_pct_2" type="number" step="any"></div></div>
+ <div class="r c2" style="grid-template-columns:30px 1fr 30px 1fr"><label>X3</label><div class="v in"><input id="xy_qty_3" type="number"></div><label>Y%</label><div class="v in"><input id="xy_pct_3" type="number" step="any"></div></div></div>
+
+<div class="bar" style="grid-column:1/4">
+ <button class="btn" id="btnAdd">Add Promotion</button><button class="btn" id="btnUpd" disabled>Update Promotion</button>
+ <button class="btn o" id="btnClear">Clear Form</button><button class="btn d" id="btnDel" disabled>Delete</button></div>
+
+<!-- row 4 -->
+<div class="p" style="grid-column:1/4"><div class="pl"><span>Promotions in Selected Month &nbsp;|&nbsp; click a row to load it</span><span>Month<span class="mo" id="o_month"></span></span></div>
+ <table class="t"><thead><tr><th>Product</th><th>Description</th><th>L1 Category</th><th>Product Owner</th><th>Vendor Name</th><th>Promotional Type</th><th>Promotional Intent</th><th>Hotspot</th></tr></thead><tbody id="plistRows"></tbody></table></div>
+
+<div class="p" style="grid-column:1/4"><div class="ph">SOH Form Calculator - calculated SOH by location</div>
+ <table class="t n"><thead><tr><th>Location</th><th>Size</th><th>Min pres</th><th>Replen method</th><th>Floor</th><th>Current SOH</th><th>Uplift forecast</th><th>New SOH</th><th>Increase qty</th><th>Increase $</th></tr></thead><tbody id="locs"><tr><td colspan="10" class="grey" style="text-align:center">Select a product</td></tr></tbody></table></div>
 </div>
 
-<div class="grid g3" style="margin-top:14px">
- <section class="card"><h2>Historical data</h2>
-  <table><thead><tr><th></th><th>LY</th><th>Promo</th><th>Change</th></tr></thead><tbody id="hist"></tbody></table>
- </section>
- <section class="card"><h2>Promotional info</h2>
-  <div class="row"><label>Promotional type</label><select id="promo_type"></select></div>
-  <div class="row"><label>Promotional intent</label><select id="promo_intent"></select></div>
-  <div class="row"><label>Hotspot</label><select id="hotspot"></select></div>
-  <div class="row"><label>Promo cost override</label><input id="promo_cost_override" type="number" step="any"></div>
-  <div class="row"><label>Uplift %</label><input id="uplift_pct" type="number" step="any" placeholder="e.g. 20"></div>
-  <div class="row"><label>Promo qty</label><input id="promo_qty_input" type="number" step="any" placeholder="or enter a quantity"></div>
-  <div class="row"><label>BDF applied ($)</label><input id="bdf_applied" type="number" step="any"></div>
-  <div class="row"><label>Presentation qty (S / M / L)</label><div class="inline"><input id="pres_qty_small" type="number" placeholder="S"><input id="pres_qty_medium" type="number" placeholder="M"><input id="pres_qty_large" type="number" placeholder="L"></div></div>
-  <div class="row"><label>Marketed in</label><div class="inline"><select id="market_in_1"></select><select id="market_in_2"></select><select id="market_in_3"></select></div></div>
- </section>
- <section class="card"><h2 id="typeTitle">Promo input</h2>
-  <div id="in_discount">
-   <div class="row"><label>Discount ($)</label><input id="discount_amt" type="number" step="any"></div>
-   <div class="row"><label>% off</label><input id="discount_pct" type="number" step="any" placeholder="e.g. 10"></div>
-   <div class="row"><label>Promo price</label><input id="promo_price_show" readonly></div>
-  </div>
-  <div id="in_buy2" class="hide"><div class="lbl">Buy X for $Y</div>
-   <div class="row"><label>X1 / $Y</label><div class="inline"><input id="x4y_qty_1" type="number"><input id="x4y_amt_1" type="number" step="any"></div></div>
-   <div class="row"><label>X2 / $Y</label><div class="inline"><input id="x4y_qty_2" type="number"><input id="x4y_amt_2" type="number" step="any"></div></div>
-   <div class="row"><label>X3 / $Y</label><div class="inline"><input id="x4y_qty_3" type="number"><input id="x4y_amt_3" type="number" step="any"></div></div>
-  </div>
-  <div id="in_buyx" class="hide"><div class="lbl">Buy X get Y% off</div>
-   <div class="row"><label>X1 / Y%</label><div class="inline"><input id="xy_qty_1" type="number"><input id="xy_pct_1" type="number" step="any"></div></div>
-   <div class="row"><label>X2 / Y%</label><div class="inline"><input id="xy_qty_2" type="number"><input id="xy_pct_2" type="number" step="any"></div></div>
-   <div class="row"><label>X3 / Y%</label><div class="inline"><input id="xy_qty_3" type="number"><input id="xy_pct_3" type="number" step="any"></div></div>
-  </div>
-  <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-   <button class="pri" id="btnAdd">Add promotion</button><button id="btnUpd" disabled>Update promotion</button>
-   <button id="btnClear">Clear</button><button class="dng" id="btnDel" disabled>Delete</button>
-  </div>
- </section>
-</div>
+<!-- Hotspots panel (Input2 Y:AA) -->
+<div class="hs"><div class="ph">HotSpots</div>
+ <div class="cols"><div>Hotspot</div><div>Spots</div><div>Used</div></div>
+ <div class="body" id="hsRows"></div>
+ <div class="foot">Used = spots in use for the selected month (type a number; it saves automatically). The selected hotspot type is highlighted.</div></div>
+</div></div>
 
-<section class="card" style="margin-top:14px"><h2>Calculated SOH by location</h2><div class="scroll"><table><thead><tr><th>Location</th><th>Size</th><th>Min pres</th><th>Method</th><th>Floor</th><th>Current SOH</th><th>Uplift fcst</th><th>New SOH</th><th>Increase qty</th><th>Increase $</th></tr></thead><tbody id="locs"><tr><td colspan="10" class="mute">Select a product</td></tr></tbody></table></div></section>
-
-<section class="card" style="margin-top:14px"><h2>Promotions in selected month - click a row to load it</h2>
- <div class="scroll"><table class="l"><thead><tr><th>Product</th><th>Description</th><th>L1</th><th>Owner</th><th>Vendor</th><th>Type</th><th>Intent</th><th>Hotspot</th></tr></thead><tbody id="plistRows"></tbody></table></div></section>
-</main>
 <script>
 const $=id=>document.getElementById(id);
-const PCT=["uplift_pct","discount_pct","xy_pct_1","xy_pct_2","xy_pct_3"];          // shown as %, stored as fraction
+const PCT=["uplift_pct","discount_pct","xy_pct_1","xy_pct_2","xy_pct_3"];
 const NUM=["promo_cost_override","uplift_pct","promo_qty_input","bdf_applied","pres_qty_small","pres_qty_medium","pres_qty_large","discount_pct","discount_amt","x4y_qty_1","x4y_qty_2","x4y_qty_3","x4y_amt_1","x4y_amt_2","x4y_amt_3","xy_qty_1","xy_qty_2","xy_qty_3","xy_pct_1","xy_pct_2","xy_pct_3"];
 const TXT=["promo_type","promo_intent","hotspot","market_in_1","market_in_2","market_in_3"];
-let L={},curId=null,timer=null,locked=false;
+let L={},curId=null,timer=null,locked=false,hsTimers={};
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=(v,d=0)=>v==null||v===""?"":Number(v).toLocaleString("en-NZ",{minimumFractionDigits:d,maximumFractionDigits:d});
-const money=v=>v==null?"":"$"+fmt(v,0);
+const money=(v,d=0)=>v==null||v===""?"":(v<0?"-":"")+"$"+fmt(Math.abs(v),d);
+const pctf=(v,d=1)=>v==null||v===""?"":fmt(v*100,d)+"%";
 async function api(url,opt){const r=await fetch(url,opt);const t=await r.json().catch(()=>({}));return {ok:r.ok,status:r.status,data:t}}
 function show(kind,html){const m=$("msg");m.className="msg "+kind;m.innerHTML=html}
-function hide(){$("msg").className="msg"}
+function hideMsg(){$("msg").className="msg"}
 function code(){const v=$("product").value.trim();const p=L.products.find(p=>`${p.product_code} - ${p.description}`===v||p.product_code===v);return p?p.product_code:null}
-function payload(){
-  const o={promo_month:$("promo_month").value,product_code:code()};
+function payload(){const o={promo_month:$("promo_month").value,product_code:code()};
   for(const k of TXT)o[k]=$(k).value||null;
-  for(const k of NUM){const v=$(k).value;o[k]=v===""?null:(PCT.includes(k)?Number(v)/100:Number(v))}
-  return o}
-function fill(r){ // load a saved promotion into the form
-  $("promo_month").value=r.promo_month.slice(0,10);
-  const p=L.products.find(p=>p.product_code===r.product_code);$("product").value=p?`${p.product_code} - ${p.description}`:r.product_code;
+  for(const k of NUM){const v=$(k).value;o[k]=v===""?null:(PCT.includes(k)?Number(v)/100:Number(v))}return o}
+function fill(r){$("promo_month").value=r.promo_month.slice(0,10);
+  const p=L.products.find(p=>p.product_code===r.product_code);$("category").value="All";fillProducts();
+  $("product").value=p?`${p.product_code} - ${p.description}`:r.product_code;
   for(const k of TXT)$(k).value=r[k]||"";
-  for(const k of NUM){const v=r[k];$(k).value=v==null?"":(PCT.includes(k)?+(v*100).toFixed(4):v)}
-  const t=(r.promo_type||"").toLowerCase();showType();}
-function clearForm(keep){for(const k of [...NUM,...TXT])$(k).value="";curId=null;$("btnUpd").disabled=true;$("btnDel").disabled=true;
-  if(!keep){$("product").value=""}hide();showType();refresh()}
-function showType(){const t=($("promo_type").value||"").toLowerCase();
-  $("in_discount").classList.toggle("hide",!(t===""||t==="discount"));
-  $("in_buy2").classList.toggle("hide",!t.startsWith("buy 2"));$("in_buyx").classList.toggle("hide",!t.startsWith("buy x"));
-  $("typeTitle").textContent=t.startsWith("buy 2")?"Promo input - multi-buy x for y":t.startsWith("buy x")?"Promo input - multi-buy x and y%":"Promo input - discount"}
-function setLock(l){locked=l;$("lockNote").classList.toggle("hide",!l);$("btnAdd").disabled=l;if(l){$("btnUpd").disabled=true;$("btnDel").disabled=true}else{$("btnUpd").disabled=curId==null;$("btnDel").disabled=curId==null}}
+  for(const k of NUM){const v=r[k];$(k).value=v==null?"":(PCT.includes(k)?+(v*100).toFixed(4):v)}}
+function clearForm(){for(const k of [...NUM,...TXT])$(k).value="";curId=null;$("product").value="";hideMsg();setLock(locked);refresh();markHotspot()}
+function setLock(l){locked=l;$("lock").style.display=l?"block":"none";$("btnAdd").disabled=l;$("btnUpd").disabled=l||curId==null;$("btnDel").disabled=l||curId==null;
+  document.querySelectorAll("#hsRows input").forEach(i=>i.disabled=l)}
+function histRow(label,a,b,c,cls){return `<div class="r c3"><label>${label}</label><div class="v g num">${a??""}</div><div class="v g num">${b??""}</div><div class="v g num ${cls||""}">${c??""}</div></div>`}
+function clearOut(){["o_code","o_variants","o_ranged","o_cdc","o_skus","o_price","p_l1","p_l2","p_l3","p_vendor","p_classification","p_product_owner","p_primary_sector","p_national_price","p_cost_price","p_moq","p_lifecycle_state"].forEach(i=>$(i).textContent="");
+  $("hist").innerHTML="";$("alerts").innerHTML=[1,2,3,4].map(n=>`<div class="al"><b>${n}</b><span></span></div>`).join("")}
 async function refresh(){
-  const c=code();if(!c){$("alerts").className="alerts";$("alerts").innerHTML="";$("hist").innerHTML="";return}
+  const c=code();if(!c){clearOut();$("locs").innerHTML=`<tr><td colspan="10" class="grey" style="text-align:center">Select a product</td></tr>`;return}
   const r=await api("/api/preview",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(payload())});
-  if(!r.ok){show("err",r.data.detail||"Preview failed");return}
+  if(!r.ok){show("err",esc(r.data.detail||"Preview failed"));return}
   const d=r.data,p=d.product;
-  $("variants").value=d.variants;$("ranged").value=d.ranged_locations;$("in_cdc").value=d.in_cdc;$("skus_in_hotspot").value=$("hotspot").value?d.skus_in_hotspot:"";
-  $("p_description").value=p.description||"";$("p_cats").value=[p.l1,p.l2,p.l3].filter(Boolean).join(" / ");$("p_vendor").value=p.vendor||"";
-  $("p_product_owner").value=p.product_owner||"";$("p_classification").value=p.classification||"";$("p_national_price").value=p.national_price??"";
-  $("p_cost_price").value=p.cost_price??"";$("p_moq").value=[p.moq,p.lifecycle_state].filter(v=>v!=null).join(" / ");
-  $("promo_price_show").value=d.promo.price==null?"":d.promo.price.toFixed(2);
-  const row=(l,a,b,c,f)=>`<tr><td>${l}</td><td>${f(a)}</td><td>${b==null?"":f(b)}</td><td class="${c<0?"neg":""}">${c==null?"":f(c)}</td></tr>`;
-  $("hist").innerHTML=row("Sales qty",d.ly.qty,d.promo.qty,d.change.qty,v=>fmt(v))+row("Revenue",d.ly.rev,d.promo.rev,d.change.rev,money)+row("GM",d.ly.gm,d.promo.gm,d.change.gm,money)
-   +`<tr><td>GM %</td><td>${d.ly.rev?fmt(d.ly.gm/d.ly.rev*100,1)+"%":""}</td><td>${d.promo.gm_pct==null?"":fmt(d.promo.gm_pct*100,1)+"%"}</td><td></td></tr>`
-   +`<tr><td>Ave SOH qty retail</td><td>${fmt(d.ly.soh_qty_retail)}</td><td>${fmt(d.promo.soh_qty_retail,1)}</td><td>${fmt(d.change.soh_qty_retail,1)}</td></tr>`
-   +`<tr><td>Ave SOH $ retail</td><td>${money(d.ly.soh_val_retail)}</td><td>${money(d.promo.soh_val_retail)}</td><td>${money(d.change.soh_val_retail)}</td></tr>`
-   +`<tr><td>Ave SOH qty CDC</td><td>${fmt(d.ly.soh_qty_cdc)}</td><td></td><td></td></tr><tr><td>Ave SOH $ CDC</td><td>${money(d.ly.soh_val_cdc)}</td><td></td><td></td></tr>`;
-  $("h_same").value=d.promo_same_month_ly.yes?`Yes - ${d.promo_same_month_ly.type||""}`:"No";
-  $("h_last").value=d.last_promo?`${d.last_promo.month.slice(0,7)} - ${d.last_promo.type}`:"";
-  const al=$("alerts");al.className="alerts"+(d.alerts.length?" has":"");
-  al.innerHTML=d.alerts.length?d.alerts.map(a=>`<div class="a">${a}</div>`).join(""):`<div class="ok">OK - no pre-promotion alerts</div>`;
-  $("locs").innerHTML=d.locations.length?d.locations.map(l=>`<tr><td>${l.code}${l.name?" "+l.name:""}</td><td>${l.size}</td><td>${fmt(l.min_pres)}</td><td>${l.replen_method||"-"}</td><td>${fmt(l.floor)}</td><td>${fmt(l.current_soh)}</td><td>${fmt(l.uplift_forecast)}</td><td>${fmt(l.soh,1)}</td><td>${fmt(l.increase_qty,1)}</td><td>${money(l.increase_value)}</td></tr>`).join("")
-    :`<tr><td colspan="10" class="mute">No locations for this hotspot</td></tr>`;
+  $("o_code").textContent=p.product_code;$("o_variants").textContent=d.variants;$("o_ranged").textContent=d.ranged_locations;$("o_cdc").textContent=d.in_cdc;
+  $("o_skus").textContent=$("hotspot").value?d.skus_in_hotspot:"";
+  $("p_l1").textContent=p.l1||"";$("p_l2").textContent=p.l2||"";$("p_l3").textContent=p.l3||"";$("p_vendor").textContent=p.vendor||"";
+  $("p_classification").textContent=p.classification||"";$("p_product_owner").textContent=p.product_owner||"";$("p_primary_sector").textContent=p.primary_sector||"";
+  $("p_national_price").textContent=money(p.national_price,2);$("p_cost_price").textContent=money(p.cost_price,2);$("p_moq").textContent=p.moq??"";$("p_lifecycle_state").textContent=p.lifecycle_state||"";
+  $("o_price").textContent=d.promo.price==null?"":money(d.promo.price,2);
+  const neg=v=>v<0?"neg":"";const ly=d.ly,pr=d.promo,ch=d.change;
+  const sa=d.promo_same_month_ly,lp=d.last_promo;
+  $("hist").innerHTML=histRow("Sales Qty",fmt(ly.qty),fmt(pr.qty),fmt(ch.qty),neg(ch.qty))
+   +histRow("Rev",money(ly.rev),money(pr.rev),money(ch.rev),neg(ch.rev))+histRow("GM",money(ly.gm),money(pr.gm),money(ch.gm),neg(ch.gm))
+   +histRow("GM %",ly.rev?pctf(ly.gm/ly.rev):"0.0%",pr.gm_pct==null?"":pctf(pr.gm_pct),pr.gm_pct==null||!ly.rev?"":pctf(pr.gm_pct-ly.gm/ly.rev))
+   +histRow("Ave SOH Qty Retail",fmt(ly.soh_qty_retail),fmt(pr.soh_qty_retail,1),fmt(ch.soh_qty_retail,1))
+   +histRow("Ave SOH $ Retail",money(ly.soh_val_retail),money(pr.soh_val_retail),money(ch.soh_val_retail))
+   +histRow("Ave SOH Qty CDC",fmt(ly.soh_qty_cdc),"","")+histRow("Ave SOH $ CDC",money(ly.soh_val_cdc),"","")
+   +histRow("Promo same mth LY?",sa.yes?"Yes":"No",sa.yes?esc(sa.type||""):"","")
+   +histRow("Last promo mth",lp?new Date(lp.month+"T00:00:00").toLocaleString("en-NZ",{month:"short",year:"2-digit"}).replace(" ","-"):"",lp&&lp.uplift_pct!=null?pctf(lp.uplift_pct,0):"",lp&&lp.qty!=null?fmt(lp.qty):"")
+   +histRow("Last promo type",lp?esc(lp.type||""):"","","");
+  const lines=d.alerts.slice(0,4);
+  $("alerts").innerHTML=[0,1,2,3].map(i=>`<div class="al"><b>${i+1}</b><span class="${!lines.length&&i===0?"ok":""}">${esc(lines[i]??(!lines.length&&i===0?"OK - no pre-promotion alerts":""))}</span></div>`).join("");
+  $("locs").innerHTML=d.locations.length?d.locations.map(l=>`<tr><td>${esc(l.code)}${l.name?" "+esc(l.name):""}</td><td>${l.size}</td><td>${fmt(l.min_pres)}</td><td>${esc(l.replen_method||"-")}</td><td>${fmt(l.floor)}</td><td>${fmt(l.current_soh)}</td><td>${fmt(l.uplift_forecast)}</td><td>${fmt(l.soh,1)}</td><td>${fmt(l.increase_qty,1)}</td><td>${money(l.increase_value)}</td></tr>`).join("")
+    :`<tr><td colspan="10" class="grey" style="text-align:center">No locations for this hotspot</td></tr>`;
   setLock(d.locked)}
 function queue(){clearTimeout(timer);timer=setTimeout(refresh,250)}
+function fillProducts(){const cat=$("category").value;
+  $("plist").innerHTML=L.products.filter(p=>cat==="All"||p.l1===cat).map(p=>`<option value="${esc(p.product_code)} - ${esc(p.description)}">`).join("")}
 async function loadList(){
-  const r=await api("/api/promotions?month="+$("promo_month").value);
-  $("plistRows").innerHTML=r.data.rows.map(x=>`<tr class="click" data-id="${x.id}"><td>${x.product_code}</td><td>${x.product_name||""}</td><td>${x.l1||""}</td><td>${x.product_owner||""}</td><td>${x.vendor||""}</td><td>${x.promo_type}</td><td>${x.promo_intent}</td><td>${x.hotspot}</td></tr>`).join("")||`<tr><td colspan="8" class="mute">No promotions in this month</td></tr>`;
+  const m=$("promo_month").value;$("o_month").textContent=new Date(m+"T00:00:00").toLocaleString("en-NZ",{month:"short",year:"2-digit"}).replace(" ","-");
+  const r=await api("/api/promotions?month="+m);const rows=r.data.rows||[];
+  let h=rows.map(x=>`<tr class="click${x.id===curId?" sel":""}" data-id="${x.id}"><td>${esc(x.product_code)}</td><td>${esc(x.product_name)}</td><td>${esc(x.l1)}</td><td>${esc(x.product_owner)}</td><td>${esc(x.vendor)}</td><td>${esc(x.promo_type)}</td><td>${esc(x.promo_intent)}</td><td>${esc(x.hotspot)}</td></tr>`).join("");
+  for(let i=rows.length;i<10;i++)h+="<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>";
+  $("plistRows").innerHTML=h;
   document.querySelectorAll("#plistRows tr.click").forEach(tr=>tr.onclick=()=>loadOne(tr.dataset.id))}
-async function loadOne(id){const r=await api("/api/promotions/"+id);if(!r.ok)return;fill(r.data);curId=+id;await refresh();setLock(r.data.locked);hide()}
-async function save(method,url,confirm){
-  const body=payload();if(confirm)body.confirm_alerts=true;
+async function loadOne(id){const r=await api("/api/promotions/"+id);if(!r.ok)return;fill(r.data);curId=+id;await refresh();setLock(r.data.locked);hideMsg();loadList();markHotspot()}
+async function save(method,url,confirmed){
+  const body=payload();if(confirmed)body.confirm_alerts=true;
   const r=await api(url,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});
-  if(r.status===422||r.status===409){show("err","Please fix:<ul>"+(r.data.errors||[r.data.detail]).map(e=>`<li>${e}</li>`).join("")+"</ul>");return}
+  if(r.status===422||r.status===409){show("err","Please fix:<ul>"+(r.data.errors||[r.data.detail]).map(e=>`<li>${esc(e)}</li>`).join("")+"</ul>");return}
   if(r.data.needs_confirmation){if(window.confirm("This promotion has pre-promotion alerts:\n\n- "+r.data.alerts.join("\n- ")+"\n\nSave it anyway?"))return save(method,url,true);return}
-  if(r.data.saved){curId=r.data.id;$("btnUpd").disabled=false;$("btnDel").disabled=false;show("good","Saved "+body.product_code+".");loadList();refresh()}}
+  if(r.data.saved){curId=r.data.id;setLock(false);show("good","Saved "+esc(body.product_code)+".");loadList();refresh()}}
+/* HotSpots panel */
+async function loadHotspots(){
+  const r=await api("/api/hotspots?month="+$("promo_month").value);
+  $("hsRows").innerHTML=(r.data.rows||[]).map(x=>`<div class="row" data-name="${esc(x.name)}" data-spots="${x.spots??""}"><div class="n">${esc(x.name)}</div><div class="s">${x.spots??""}</div><div class="u"><input type="number" min="0" value="${x.used??""}" data-name="${esc(x.name)}"></div></div>`).join("");
+  document.querySelectorAll("#hsRows input").forEach(i=>{i.disabled=locked;i.oninput=()=>{rowOver(i);clearTimeout(hsTimers[i.dataset.name]);hsTimers[i.dataset.name]=setTimeout(()=>saveUsed(i),500)}});
+  document.querySelectorAll("#hsRows input").forEach(rowOver);markHotspot()}
+function rowOver(i){const row=i.closest(".row"),s=row.dataset.spots;row.classList.toggle("over",s!==""&&i.value!==""&&+i.value>+s)}
+async function saveUsed(i){const v=i.value===""?null:Math.max(0,Math.floor(+i.value));
+  const r=await api("/api/hotspots/used",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({promo_month:$("promo_month").value,hotspot_name:i.dataset.name,used:v})});
+  if(!r.ok)show("err",esc(r.data.detail||"Could not save Used"))}
+function markHotspot(){const t=$("hotspot").value.trim().toLowerCase();
+  document.querySelectorAll("#hsRows .row").forEach(r=>{const n=r.dataset.name.toLowerCase();r.classList.toggle("on",!!t&&(n===t||n.startsWith(t+" - ")))});
+  const on=document.querySelector("#hsRows .row.on");if(on)on.scrollIntoView({block:"nearest"})}
 async function init(){
   L=(await api("/api/lists")).data;
-  const sel=(id,vals,blank)=>$(id).innerHTML=(blank?'<option value=""></option>':"")+vals.map(v=>`<option>${v}</option>`).join("");
+  const sel=(id,vals,blank)=>$(id).innerHTML=(blank?'<option value=""></option>':"")+vals.map(v=>`<option>${esc(v)}</option>`).join("");
   sel("promo_type",L.promo_type,true);sel("promo_intent",L.intent,true);sel("hotspot",L.hotspot,true);for(const i of [1,2,3])sel("market_in_"+i,L.market_in,true);
-  $("plist").innerHTML=L.products.map(p=>`<option value="${p.product_code} - ${p.description}">`).join("");
-  const t=new Date(L.today+"T00:00:00");let opts="";for(let i=-1;i<=18;i++){const d=new Date(t.getFullYear(),t.getMonth()+i,1);const v=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`;opts+=`<option value="${v}">${d.toLocaleString("en-NZ",{month:"short",year:"numeric"})}</option>`}
+  sel("category",["All",...new Set(L.products.map(p=>p.l1).filter(Boolean))].sort((a,b)=>a==="All"?-1:a.localeCompare(b)));fillProducts();
+  const t=new Date(L.today+"T00:00:00");let opts="";for(let i=-1;i<=18;i++){const d=new Date(t.getFullYear(),t.getMonth()+i,1);const v=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-01`;opts+=`<option value="${v}">${d.toLocaleString("en-NZ",{month:"short",year:"2-digit"}).replace(" ","-")}</option>`}
   $("promo_month").innerHTML=opts;$("promo_month").selectedIndex=2;
-  for(const k of ["product","promo_month",...NUM,...TXT])$(k).addEventListener("input",()=>{if(k==="promo_type")showType();if(k==="promo_month")loadList();queue()});
-  $("promo_month").addEventListener("change",()=>{curId=null;loadList();refresh()});
+  for(const k of ["product",...NUM,...TXT])$(k).addEventListener("input",()=>{if(k==="hotspot")markHotspot();queue()});
+  $("category").onchange=()=>{fillProducts();$("product").value="";refresh()};
+  $("promo_month").onchange=()=>{curId=null;loadList();loadHotspots();refresh()};
   $("btnAdd").onclick=()=>save("POST","/api/promotions");
   $("btnUpd").onclick=()=>curId&&save("PUT","/api/promotions/"+curId);
-  $("btnDel").onclick=async()=>{if(curId&&confirm("Delete this promotion?")){const r=await api("/api/promotions/"+curId,{method:"DELETE"});if(r.ok){clearForm(false);loadList();show("good","Deleted.")}else show("err",r.data.detail)}};
-  $("btnClear").onclick=()=>clearForm(false);
-  showType();loadList()}
+  $("btnDel").onclick=async()=>{if(curId&&confirm("Delete this promotion?")){const r=await api("/api/promotions/"+curId,{method:"DELETE"});if(r.ok){clearForm();loadList();show("good","Deleted.")}else show("err",esc(r.data.detail))}};
+  $("btnClear").onclick=clearForm;
+  clearOut();loadList();loadHotspots()}
 init();
 </script></body></html>

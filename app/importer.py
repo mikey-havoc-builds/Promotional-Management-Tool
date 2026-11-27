@@ -8,8 +8,11 @@ Lists, Alerts and the Database (promotions) sheet.
 import re
 import sys
 import datetime as dt
+import pathlib
 import openpyxl
 from .db import connect
+
+SCHEMA = pathlib.Path(__file__).resolve().parents[1] / "db" / "schema.sql"
 
 MONTHS = {m: i + 1 for i, m in enumerate("jan feb mar apr may jun jul aug sep oct nov dec".split())}
 
@@ -60,8 +63,9 @@ def find_header(ws, label):
 def load(path, reset=False):
     wb = openpyxl.load_workbook(path, data_only=True)
     with connect() as con, con.cursor() as cur:
+        cur.execute(SCHEMA.read_text())      # idempotent: creates any tables added since the database was first set up
         if reset:
-            cur.execute("""TRUNCATE promotions, sales_monthly, inventory_monthly, forecast_monthly, location_stock,
+            cur.execute("""TRUNCATE hotspot_usage, hotspot_master, promotions, sales_monthly, inventory_monthly, forecast_monthly, location_stock,
                            replen_settings, hotspots, locations, product_master, lists, alert_definitions RESTART IDENTITY CASCADE""")
         # --- product master
         ws = wb["Product Master"]
@@ -104,6 +108,12 @@ def load(path, reset=False):
             if loc and txt(r[4]):
                 cur.execute("""INSERT INTO hotspots VALUES (%s,%s,%s) ON CONFLICT (location_code,hotspot_name)
                                DO UPDATE SET product_spaces=EXCLUDED.product_spaces""", (loc, txt(r[4]), num(r[5]) or 0))
+
+        # hotspot master list (Hotspots!I:J: name, product spaces)
+        for r in wb["Hotspots"].iter_rows(min_row=2, min_col=9, max_col=10, values_only=True):
+            if txt(r[0]):
+                cur.execute("INSERT INTO hotspot_master(hotspot_name,spots) VALUES (%s,%s) ON CONFLICT (hotspot_name) DO UPDATE SET spots=EXCLUDED.spots",
+                            (txt(r[0]), int(num(r[1])) if num(r[1]) is not None else None))
 
         # --- history sheets (month taken from the column header text, e.g. 'Oct 25 Sales Qty')
         def history(sheet, code_col, loc_col, type_col, kind_cols):

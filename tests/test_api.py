@@ -103,3 +103,17 @@ def test_selection_counts(client):   # keep last: it rewrites abc's replen rows
         c.execute("DELETE FROM replen_settings WHERE location_code='155-4007'")
         c.commit()
         assert client.post("/api/preview", json=BASE).json()["in_cdc"] == "No"
+
+
+def test_hotspots_panel(client):
+    r = client.get("/api/hotspots", params={"month": "2027-01-01"}).json()
+    names = {x["name"]: x for x in r["rows"]}
+    assert names["Hero Spot"]["spots"] == 1 and names["Aisle End - Hotspot 3"]["spots"] == 4
+    assert "Shelf Only" in names and names["Shelf Only"]["spots"] is None and not r["locked"]
+    put = lambda **kw: client.put("/api/hotspots/used", json={"promo_month": "2027-01-01", "hotspot_name": "Hero Spot", **kw})
+    assert put(used=1).json()["saved"]
+    assert next(x for x in client.get("/api/hotspots", params={"month": "2027-01-01"}).json()["rows"] if x["name"] == "Hero Spot")["used"] == 1
+    assert put(used=-1).status_code == 422
+    assert put(used=None).json()["saved"]                                     # cleared
+    assert client.put("/api/hotspots/used", json={"promo_month": "2027-01-01", "hotspot_name": "Nope", "used": 1}).status_code == 404
+    assert client.put("/api/hotspots/used", json={"promo_month": "2020-01-01", "hotspot_name": "Hero Spot", "used": 1}).status_code == 422

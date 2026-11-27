@@ -33,6 +33,21 @@ CREATE TABLE IF NOT EXISTS hotspots (
     PRIMARY KEY (location_code, hotspot_name)
 );
 
+-- Master list of hotspot positions and how many product spaces each has (the Input2 "HotSpots" panel / Hotspots!I:J)
+CREATE TABLE IF NOT EXISTS hotspot_master (
+    sort_order   serial,
+    hotspot_name text PRIMARY KEY,
+    spots        integer
+);
+-- "Used" spaces entered by the planner for each hotspot in a promo month (green input column in the HotSpots panel)
+CREATE TABLE IF NOT EXISTS hotspot_usage (
+    promo_month  date NOT NULL CHECK (promo_month = date_trunc('month', promo_month)::date),
+    hotspot_name text NOT NULL REFERENCES hotspot_master(hotspot_name) ON DELETE CASCADE,
+    used         integer NOT NULL CHECK (used >= 0),
+    updated_at   timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (promo_month, hotspot_name)
+);
+
 -- Branch size: the manual override on locations if set, otherwise by total spaces:
 -- Large > 50, Small < 33, otherwise Medium (same rule as the Excel Hotspots(fml) sheet)
 CREATE OR REPLACE VIEW branch_size AS
