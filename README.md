@@ -11,7 +11,8 @@ A promotional planning tool in two forms that share the same logic:
 
 ```bash
 docker compose up --build                       # Postgres + web app on http://localhost:8000
-docker compose run --rm web python -m app.importer excel/MM_Promo_Tool.xlsx --reset
+docker compose run --rm web python -m app.seed                 # real data (see "Real data" below)
+# or the small sample workbook:  docker compose run --rm web python -m app.importer excel/MM_Promo_Tool.xlsx --reset
 ```
 
 Without Docker (needs PostgreSQL 14+):
@@ -20,7 +21,7 @@ Without Docker (needs PostgreSQL 14+):
 createdb promo && psql promo -f db/schema.sql
 pip install -r requirements.txt
 export DATABASE_URL=postgresql://postgres:promo@localhost:5432/promo
-python -m app.importer excel/MM_Promo_Tool.xlsx --reset
+python -m app.seed                 # real data (or: python -m app.importer excel/MM_Promo_Tool.xlsx --reset for the sample)
 uvicorn app.main:app --reload
 ```
 
@@ -32,10 +33,33 @@ Tests: `pip install -r requirements-dev.txt && pytest` (uses a throw-away `promo
 ## Database (`db/schema.sql`)
 
 `product_master`, `locations` (+ `branch_size` view), `hotspots`, `replen_settings`, `location_stock`,
-`sales_monthly`, `inventory_monthly`, `forecast_monthly` (retained / current), `lists`, `alert_definitions`
+`sales_monthly` (by region), `inventory_monthly`, `forecast_monthly` (retained / current), `lists`, `alert_definitions`
 and `promotions` (one row per product per promo month - the Excel `Database` sheet).
 Monthly tables store the month the figures describe (the workbook's `Oct 25 Sales Qty` column becomes `2025-10-01`).
 `python -m app.importer` loads all of this from the workbook, so the sheets can still be used to seed or refresh data.
+
+## Real data (`data_build/`, `app/seed.py`)
+
+The demo database is loaded from the extracts in `PromoMgmt/Data_Tables`:
+
+| Source file | Goes into |
+|---|---|
+| `BIS.xlsb` (stock / range / replen snapshot, variant x warehouse) | `product_master` (one row per product number, with variant count), `locations`, `replen_settings`, `location_stock` |
+| `SNO_Qty`, `SNO_Revenue`, `SNO_GM`, `SNO_Cust` `.xlsb` (monthly pivots, product x region) | `sales_monthly` (qty, revenue, GM, customers **by region**) |
+| `Promo_Hist.xlsx` (Database sheet) | `promotions` with `source='history'` (duplicates and blank type/intent kept as-is) |
+
+```bash
+pip install -r requirements-data.txt
+python data_build/build_seed.py --src "C:/path/to/PromoMgmt/Data_Tables"      # writes data/seed/*.csv.gz (about 1-2 min)
+python -m app.seed                                                          # dropdown lists / HotSpots panel from the workbook, then all data tables replaced from data/seed
+```
+
+Notes on how the extracts are mapped:
+* Locations: retail branches plus distribution centres. `National 3PL DC Hamilton` / `Christchurch` are coded `155-4008` / `155-4007` (the CDC planned-range check); "DO NOT USE", real-estate, port, mill and bulk-store sites are dropped. Other locations use the BIS warehouse name as their code.
+* `replen_settings` is combined to product x location (best range across variants; floors and stock summed). `replen_method` is derived from the demand tier: `K*` = Kanban, everything else = Forecast. Never-ranged locations with no stock are not stored.
+* Sales have no warehouse, so `sales_monthly` is keyed by region and the dashboard's "product / warehouse" level shows product / region. Customers are matched to products by name + vendor (unique names only).
+* **Not in the extracts, so empty:** monthly inventory history (`inventory_monthly`), forecasts (`forecast_monthly` - the "forecast less than promo qty" alert fires until loaded), branch hotspot spaces (`hotspots` - branch size falls back to Small and the form uses all ranged branches).
+* `data/seed/` is git-ignored: it holds real cost, stock and sales figures. Rebuild it from the source files rather than committing it to a public repository.
 
 ## Business rules (same as the Excel tool)
 

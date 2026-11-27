@@ -1,5 +1,6 @@
 # docker compose up --build      -> http://localhost:8000
-# docker compose run --rm web python -m app.importer excel/MM_Promo_Tool.xlsx --reset   (load the workbook data)
+# docker compose run --rm web python -m app.seed      (load the real data from data/seed - see README "Real data")
+# docker compose run --rm web python -m app.importer excel/MM_Promo_Tool.xlsx --reset   (load only the sample workbook data)
 services:
   db:
     image: postgres:16
@@ -15,6 +16,8 @@ services:
     build: .
     environment:
       DATABASE_URL: postgresql://postgres:promo@db:5432/promo
+    volumes:
+      - ./data:/srv/data:ro
     depends_on: {db: {condition: service_healthy}}
     ports: ["8000:8000"]
 volumes:

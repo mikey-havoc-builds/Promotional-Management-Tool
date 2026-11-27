@@ -37,18 +37,18 @@ def build(cur, month, window=1, l1=None, vendor=None, owner=None, hotspot=None, 
         return empty
 
     ly_months = [add_months(m, -12) for m in months]
-    cur.execute("""SELECT product_code, location_code, month, qty, revenue, gm FROM sales_monthly
+    cur.execute("""SELECT product_code, region, month, qty, revenue, gm FROM sales_monthly
                    WHERE product_code = ANY(%s) AND month = ANY(%s)""", (codes, ly_months + months))
     sales = defaultdict(lambda: {"qty": 0.0, "rev": 0.0, "gm": 0.0})
     for r in cur.fetchall():
-        k = (r["product_code"], r["location_code"], r["month"])
+        k = (r["product_code"], r["region"], r["month"])
         sales[k] = {"qty": n(r["qty"]), "rev": n(r["revenue"]), "gm": n(r["gm"])}
-    cur.execute("""SELECT i.product_code, i.location_code, i.month, i.avg_qty FROM inventory_monthly i
+    cur.execute("""SELECT i.product_code, COALESCE(l.region,'') AS region, i.month, SUM(i.avg_qty) AS avg_qty FROM inventory_monthly i
                    JOIN locations l ON l.code=i.location_code WHERE l.warehouse_type='Retail'
-                   AND i.product_code = ANY(%s) AND i.month = ANY(%s)""", (codes, ly_months + months))
+                   AND i.product_code = ANY(%s) AND i.month = ANY(%s) GROUP BY 1,2,3""", (codes, ly_months + months))
     inv = defaultdict(float)
     for r in cur.fetchall():
-        inv[(r["product_code"], r["location_code"], r["month"])] = n(r["avg_qty"])
+        inv[(r["product_code"], r["region"], r["month"])] = n(r["avg_qty"])
 
     sale_locs = defaultdict(set)
     for (p, l, m) in list(sales) + list(inv):

@@ -1,0 +1,5 @@
+# only needed to rebuild data/seed from the source extracts (data_build/build_seed.py)
+-r requirements.txt
+pandas>=2.2
+openpyxl>=3.1
+pyxlsb>=1.0.10

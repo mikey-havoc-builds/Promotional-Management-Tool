@@ -23,9 +23,19 @@ docker compose up --build
 The first run downloads Postgres and builds the app (a few minutes). Leave this window open - it is the running app.
 It is ready when you see `Uvicorn running on http://0.0.0.0:8000`.
 
-## 3. Load the sample data from the Excel workbook
+## 3. Load the data
 
 Open a **second** terminal in the same folder and run:
+
+To load the **real data** (BIS, SNO_ sales files and Promo_Hist), first build the seed files from your `Data_Tables` folder (needs Python 3.12+ on the laptop, one-off):
+
+```bash
+pip install -r requirements-data.txt
+python data_build/build_seed.py --src "C:\Users\user\OneDrive\Documents\PromoMgmt\Data_Tables"
+docker compose run --rm web python -m app.seed
+```
+
+For just the small sample workbook instead:
 
 ```bash
 docker compose run --rm web python -m app.importer excel/MM_Promo_Tool.xlsx --reset
@@ -74,7 +84,7 @@ stock or actual sales for future months, so Current SOH is 0 and "Actual" figure
    psql promo -f db/schema.sql          # Windows: psql -U postgres -d promo -f db/schema.sql
    pip install -r requirements.txt
    export DATABASE_URL=postgresql://postgres:YOURPASSWORD@localhost:5432/promo     # Windows PowerShell: $env:DATABASE_URL="..."
-   python -m app.importer excel/MM_Promo_Tool.xlsx --reset
+   python -m app.seed      # needs data/seed (see step 3), or use: python -m app.importer excel/MM_Promo_Tool.xlsx --reset
    uvicorn app.main:app
    ```
 4. Open http://localhost:8000/

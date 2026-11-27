@@ -209,7 +209,7 @@ def preview(cur, f):
     in_cdc = "Yes" if cur.fetchone()["e"] else "No"
     # Variants: unique product (variant) codes on Replen Settings for the selected product
     cur.execute("SELECT count(DISTINCT product_code) c FROM replen_settings WHERE product_code=%s", (code,))
-    variants = cur.fetchone()["c"]
+    variants = prod.get("variant_count") or cur.fetchone()["c"]
 
     # --- promo history
     cur.execute("SELECT promo_type, discount_pct, promo_qty FROM promotions WHERE product_code=%s AND promo_month=%s", (code, ly_month))

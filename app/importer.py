@@ -144,7 +144,15 @@ def load(path, reset=False):
 
         for (prod, loc, m), d in merge({"qty": "Sales Qty", "revenue": "Sales Revenue", "gm": "Sales GM",
                                        "transactions": "Sales Txns", "customers": "Sales Customers"}).items():
-            cur.execute("INSERT INTO sales_monthly VALUES (%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+            # sales are held by region: add the warehouse's figures to its region's row
+            cur.execute("""INSERT INTO sales_monthly
+                           SELECT %s, COALESCE((SELECT region FROM locations WHERE code=%s), ''), %s, %s::numeric, %s::numeric, %s::numeric, %s::int, %s::int
+                           ON CONFLICT (product_code, region, month) DO UPDATE SET
+                             qty=COALESCE(sales_monthly.qty,0)+COALESCE(EXCLUDED.qty,0),
+                             revenue=COALESCE(sales_monthly.revenue,0)+COALESCE(EXCLUDED.revenue,0),
+                             gm=COALESCE(sales_monthly.gm,0)+COALESCE(EXCLUDED.gm,0),
+                             transactions=COALESCE(sales_monthly.transactions,0)+COALESCE(EXCLUDED.transactions,0),
+                             customers=COALESCE(sales_monthly.customers,0)+COALESCE(EXCLUDED.customers,0)""",
                         (prod, loc, m, d.get("qty"), d.get("revenue"), d.get("gm"), d.get("transactions"), d.get("customers")))
         for (prod, loc, m), d in merge({"avg_qty": "Inv Qty", "avg_value": "Inv Value", "osa_days": "OSA-Days"}).items():
             cur.execute("INSERT INTO inventory_monthly VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",

@@ -13,8 +13,10 @@ CREATE TABLE IF NOT EXISTS product_master (
     national_price  numeric(12,4),
     cost_price      numeric(12,4),
     moq             integer,
-    lifecycle_state text
+    lifecycle_state text,
+    variant_count   integer          -- number of product variant codes under this product number
 );
+ALTER TABLE product_master ADD COLUMN IF NOT EXISTS variant_count integer;
 
 -- Branches (stores / warehouses). warehouse_type: Retail or CDC
 CREATE TABLE IF NOT EXISTS locations (
@@ -74,13 +76,20 @@ CREATE TABLE IF NOT EXISTS location_stock (      -- current on hand (Excel "Loca
 );
 
 -- Monthly history. "month" is the first day of the month the figures describe.
+-- Sales are held by REGION (the SNO sales extracts have no warehouse column).
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='sales_monthly')
+     AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='sales_monthly' AND column_name='region') THEN
+    DROP TABLE sales_monthly;      -- old location-keyed layout
+  END IF;
+END $$;
 CREATE TABLE IF NOT EXISTS sales_monthly (
     product_code  text NOT NULL REFERENCES product_master(product_code) ON DELETE CASCADE,
-    location_code text NOT NULL REFERENCES locations(code) ON DELETE CASCADE,
+    region        text NOT NULL,
     month         date NOT NULL,
     qty numeric(14,2), revenue numeric(14,2), gm numeric(14,2),
     transactions integer, customers integer,
-    PRIMARY KEY (product_code, location_code, month)
+    PRIMARY KEY (product_code, region, month)
 );
 CREATE INDEX IF NOT EXISTS sales_monthly_month_idx ON sales_monthly(month);
 
@@ -121,9 +130,9 @@ CREATE TABLE IF NOT EXISTS promotions (
     l1 text, l2 text, l3 text, vendor text, classification text, product_owner text,
     national_price   numeric(12,4), vendor_cost numeric(12,4), moq integer,
     ranged_locations integer, in_cdc text,
-    promo_type       text NOT NULL,
-    promo_intent     text NOT NULL,
-    hotspot          text NOT NULL,
+    promo_type       text,
+    promo_intent     text,
+    hotspot          text,
     promo_cost_override numeric(12,4),
     uplift_pct       numeric(8,4),
     promo_qty_input  numeric(14,2),
@@ -142,7 +151,12 @@ CREATE TABLE IF NOT EXISTS promotions (
     promo_soh_val_retail numeric(14,2), promo_soh_qty_cdc numeric(14,2), promo_soh_val_cdc numeric(14,2),
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (promo_month, product_code)
+    source text NOT NULL DEFAULT 'app'      -- 'app' = entered in the form, 'history' = loaded from Promo_Hist
 );
+ALTER TABLE promotions ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'app';
+ALTER TABLE promotions ALTER COLUMN promo_type DROP NOT NULL, ALTER COLUMN promo_intent DROP NOT NULL, ALTER COLUMN hotspot DROP NOT NULL;
+ALTER TABLE promotions DROP CONSTRAINT IF EXISTS promotions_promo_month_product_code_key;
+-- one app-entered promotion per product per month; history rows may repeat (Promo_Hist has duplicates)
+CREATE UNIQUE INDEX IF NOT EXISTS promotions_app_unique ON promotions(promo_month, product_code) WHERE source='app';
 CREATE INDEX IF NOT EXISTS promotions_month_idx ON promotions(promo_month);
 CREATE INDEX IF NOT EXISTS promotions_hotspot_idx ON promotions(promo_month, lower(hotspot));
