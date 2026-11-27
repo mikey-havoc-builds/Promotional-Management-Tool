@@ -65,7 +65,7 @@ def load(path, reset=False):
     with connect() as con, con.cursor() as cur:
         cur.execute(SCHEMA.read_text())      # idempotent: creates any tables added since the database was first set up
         if reset:
-            cur.execute("""TRUNCATE hotspot_usage, hotspot_master, promotions, sales_monthly, inventory_monthly, forecast_monthly, location_stock,
+            cur.execute("""TRUNCATE hotspot_master, promotions, sales_monthly, inventory_monthly, forecast_monthly, location_stock,
                            replen_settings, hotspots, locations, product_master, lists, alert_definitions RESTART IDENTITY CASCADE""")
         # --- product master
         ws = wb["Product Master"]

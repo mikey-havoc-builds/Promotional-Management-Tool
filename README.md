@@ -54,8 +54,9 @@ Monthly tables store the month the figures describe (the workbook's `Oct 25 Sale
   Negative GM shows); Not enough CDC inventory; Sales less than increased inventory; Forecast less than Promo Qty.
 * **Saving**: type, intent and hotspot required; exactly one of Uplift % / Promo Qty; presentation qty unless Bargain Bin / Shelf only;
   discount / multi-buy rules by type; the current and past months are locked (New Zealand time); alerts ask for confirmation.
-* **HotSpots panel** (right of the form, as on Input2): every hotspot position with its number of Spots; *Used* is entered by the planner per month and saved to
-  `hotspot_usage` (locked months are read-only). The hotspot chosen on the form is highlighted; Used above Spots turns red.
+* **HotSpots panel** (right of the form, as on Input2): every hotspot position with its number of Spots. The form's Hotspot dropdown lists these positions
+  (e.g. `Aisle End - Hotspot 3`), so each promotion is assigned to a spot. *Used* = number of products assigned to that spot in the selected month, and turns red
+  when Used is greater than Spots. SOH branches and "# SKUs already in Hotspot" still work at hotspot-type level (the text before ` - `).
 * **Dashboard**: filters L1 / Vendor / Owner / Hotspot, detail level L1 -> Product - Warehouse, 1- or 2-month window
   (month 2 promo = LY of month 2), warehouse promo allocated by last-year share.
 

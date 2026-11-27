@@ -83,6 +83,10 @@ def lists():
         cur.execute("""SELECT product_code, description, l1, vendor FROM product_master
                        WHERE description IS NOT NULL ORDER BY product_code""")
         out["products"] = cur.fetchall()
+        cur.execute("SELECT hotspot_name FROM hotspot_master ORDER BY sort_order")
+        hs = [r["hotspot_name"] for r in cur.fetchall()]
+        if hs:
+            out["hotspot"] = hs           # promotions are assigned to a specific hotspot position
         cur.execute("SELECT DISTINCT vendor FROM product_master WHERE vendor IS NOT NULL ORDER BY 1")
         out["vendors"] = [r["vendor"] for r in cur.fetchall()]
         out["today"] = dt.datetime.now(calc.TZ).date().isoformat()
@@ -209,39 +213,13 @@ def get_dashboard(month: str, window: int = 1, l1: str | None = None, vendor: st
 
 @app.get("/api/hotspots")
 def hotspots(month: str):
+    """Hotspot positions with Spots and Used (= promotions assigned to that hotspot in the month)."""
     m = calc.first_of_month(month)
     with connect() as con, con.cursor() as cur:
-        cur.execute("""SELECT h.hotspot_name AS name, h.spots, u.used FROM hotspot_master h
-                       LEFT JOIN hotspot_usage u ON u.hotspot_name=h.hotspot_name AND u.promo_month=%s
-                       ORDER BY h.sort_order""", (m,))
+        cur.execute("""SELECT h.hotspot_name AS name, h.spots,
+                       (SELECT count(*) FROM promotions p WHERE p.promo_month=%s AND lower(p.hotspot)=lower(h.hotspot_name)) AS used
+                       FROM hotspot_master h ORDER BY h.sort_order""", (m,))
         return j({"locked": calc.is_locked(m), "rows": cur.fetchall()})
-
-
-class UsedIn(BaseModel):
-    promo_month: str
-    hotspot_name: str
-    used: int | None = None
-
-
-@app.put("/api/hotspots/used")
-def set_used(u: UsedIn):
-    m = calc.first_of_month(u.promo_month)
-    if calc.is_locked(m):
-        raise HTTPException(422, "The current month and past months are locked")
-    if u.used is not None and u.used < 0:
-        raise HTTPException(422, "Used must be 0 or more")
-    with connect() as con, con.cursor() as cur:
-        cur.execute("SELECT 1 FROM hotspot_master WHERE hotspot_name=%s", (u.hotspot_name,))
-        if not cur.fetchone():
-            raise HTTPException(404, "Unknown hotspot")
-        if u.used is None:
-            cur.execute("DELETE FROM hotspot_usage WHERE promo_month=%s AND hotspot_name=%s", (m, u.hotspot_name))
-        else:
-            cur.execute("""INSERT INTO hotspot_usage(promo_month,hotspot_name,used) VALUES (%s,%s,%s)
-                           ON CONFLICT (promo_month,hotspot_name) DO UPDATE SET used=EXCLUDED.used, updated_at=now()""",
-                        (m, u.hotspot_name, u.used))
-        con.commit()
-        return {"saved": True}
 
 
 @app.get("/api/months")

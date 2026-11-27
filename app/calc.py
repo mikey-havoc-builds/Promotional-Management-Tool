@@ -53,7 +53,9 @@ def soh_for_location(min_pres, floor, method, fc_uplift, ranged, stopped):
 
 
 def hotspot_type(name):
-    return (name or "").split(" - ")[0].strip().lower()
+    """'Aisle End - Hotspot 3' -> 'aisle end'; 'Hero Spot' -> 'hero spot' (a spot belongs to the type before ' - ')."""
+    t = (name or "").split(" - ")[0].strip().lower()
+    return "bargain bin" if t == "bargin bin" else t      # the workbook's hotspot list has this typo
 
 
 def promo_price(national, discount_pct, discount_amt, explicit=None):
@@ -74,7 +76,7 @@ def validate(f, product_exists=True):
     if not f.get("product_code") or not product_exists:
         e.append("Select a valid product")
     t = (f.get("promo_type") or "").lower()
-    h = (f.get("hotspot") or "").lower()
+    h = hotspot_type(f.get("hotspot"))
     if not t:
         e.append("Promotional Type must be filled")
     if not f.get("promo_intent"):
@@ -215,7 +217,8 @@ def preview(cur, f):
     cur.execute("""SELECT promo_month, promo_type, uplift_pct, promo_qty FROM promotions
                    WHERE product_code=%s AND promo_month<>%s ORDER BY promo_month DESC LIMIT 1""", (code, month))
     last = cur.fetchone()
-    cur.execute("SELECT count(*) c FROM promotions WHERE promo_month=%s AND lower(hotspot)=lower(%s)", (month, f.get("hotspot") or ""))
+    cur.execute("""SELECT count(*) c FROM promotions WHERE promo_month=%s
+                   AND lower(split_part(hotspot,' - ',1)) = ANY(%s)""", (month, [htype, "bargin bin" if htype == "bargain bin" else htype]))
     in_hotspot = cur.fetchone()["c"]
 
     # --- alerts (pre-promotion, one line each, wording from the alert_definitions table)

@@ -81,7 +81,7 @@
 <div class="hs"><div class="ph">HotSpots</div>
  <div class="cols"><div>Hotspot</div><div>Spots</div><div>Used</div></div>
  <div class="body" id="hsRows"></div>
- <div class="foot">Used = spots in use for the selected month (type a number; it saves automatically). The selected hotspot type is highlighted.</div></div>
+ <div class="foot">Used = number of products assigned to the spot in the selected month. Turns red when Used is greater than Spots. The hotspot chosen on the form is highlighted.</div></div>
 </div></div>
 
 <script>
@@ -108,7 +108,7 @@ function fill(r){$("promo_month").value=r.promo_month.slice(0,10);
   for(const k of NUM){const v=r[k];$(k).value=v==null?"":(PCT.includes(k)?+(v*100).toFixed(4):v)}}
 function clearForm(){for(const k of [...NUM,...TXT])$(k).value="";curId=null;$("product").value="";hideMsg();setLock(locked);refresh();markHotspot()}
 function setLock(l){locked=l;$("lock").style.display=l?"block":"none";$("btnAdd").disabled=l;$("btnUpd").disabled=l||curId==null;$("btnDel").disabled=l||curId==null;
-  document.querySelectorAll("#hsRows input").forEach(i=>i.disabled=l)}
+  }
 function histRow(label,a,b,c,cls){return `<div class="r c3"><label>${label}</label><div class="v g num">${a??""}</div><div class="v g num">${b??""}</div><div class="v g num ${cls||""}">${c??""}</div></div>`}
 function clearOut(){["o_code","o_variants","o_ranged","o_cdc","o_skus","o_price","p_l1","p_l2","p_l3","p_vendor","p_classification","p_product_owner","p_primary_sector","p_national_price","p_cost_price","p_moq","p_lifecycle_state"].forEach(i=>$(i).textContent="");
   $("hist").innerHTML="";$("alerts").innerHTML=[1,2,3,4].map(n=>`<div class="al"><b>${n}</b><span></span></div>`).join("")}
@@ -155,19 +155,14 @@ async function save(method,url,confirmed){
   const r=await api(url,{method,headers:{"content-type":"application/json"},body:JSON.stringify(body)});
   if(r.status===422||r.status===409){show("err","Please fix:<ul>"+(r.data.errors||[r.data.detail]).map(e=>`<li>${esc(e)}</li>`).join("")+"</ul>");return}
   if(r.data.needs_confirmation){if(window.confirm("This promotion has pre-promotion alerts:\n\n- "+r.data.alerts.join("\n- ")+"\n\nSave it anyway?"))return save(method,url,true);return}
-  if(r.data.saved){curId=r.data.id;setLock(false);show("good","Saved "+esc(body.product_code)+".");loadList();refresh()}}
+  if(r.data.saved){curId=r.data.id;setLock(false);show("good","Saved "+esc(body.product_code)+".");loadList();loadHotspots();refresh()}}
 /* HotSpots panel */
 async function loadHotspots(){
   const r=await api("/api/hotspots?month="+$("promo_month").value);
-  $("hsRows").innerHTML=(r.data.rows||[]).map(x=>`<div class="row" data-name="${esc(x.name)}" data-spots="${x.spots??""}"><div class="n">${esc(x.name)}</div><div class="s">${x.spots??""}</div><div class="u"><input type="number" min="0" value="${x.used??""}" data-name="${esc(x.name)}"></div></div>`).join("");
-  document.querySelectorAll("#hsRows input").forEach(i=>{i.disabled=locked;i.oninput=()=>{rowOver(i);clearTimeout(hsTimers[i.dataset.name]);hsTimers[i.dataset.name]=setTimeout(()=>saveUsed(i),500)}});
-  document.querySelectorAll("#hsRows input").forEach(rowOver);markHotspot()}
-function rowOver(i){const row=i.closest(".row"),s=row.dataset.spots;row.classList.toggle("over",s!==""&&i.value!==""&&+i.value>+s)}
-async function saveUsed(i){const v=i.value===""?null:Math.max(0,Math.floor(+i.value));
-  const r=await api("/api/hotspots/used",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({promo_month:$("promo_month").value,hotspot_name:i.dataset.name,used:v})});
-  if(!r.ok)show("err",esc(r.data.detail||"Could not save Used"))}
+  $("hsRows").innerHTML=(r.data.rows||[]).map(x=>`<div class="row" data-name="${esc(x.name)}" data-spots="${x.spots??""}"><div class="n">${esc(x.name)}</div><div class="s">${x.spots??""}</div><div class="u">${x.used}</div></div>`).join("");
+  document.querySelectorAll("#hsRows .row").forEach(r=>{const sp=r.dataset.spots,u=+r.querySelector(".u").textContent;r.classList.toggle("over",sp!==""&&u>+sp)});markHotspot()}
 function markHotspot(){const t=$("hotspot").value.trim().toLowerCase();
-  document.querySelectorAll("#hsRows .row").forEach(r=>{const n=r.dataset.name.toLowerCase();r.classList.toggle("on",!!t&&(n===t||n.startsWith(t+" - ")))});
+  document.querySelectorAll("#hsRows .row").forEach(r=>r.classList.toggle("on",!!t&&r.dataset.name.toLowerCase()===t));
   const on=document.querySelector("#hsRows .row.on");if(on)on.scrollIntoView({block:"nearest"})}
 async function init(){
   L=(await api("/api/lists")).data;
@@ -181,7 +176,7 @@ async function init(){
   $("promo_month").onchange=()=>{curId=null;loadList();loadHotspots();refresh()};
   $("btnAdd").onclick=()=>save("POST","/api/promotions");
   $("btnUpd").onclick=()=>curId&&save("PUT","/api/promotions/"+curId);
-  $("btnDel").onclick=async()=>{if(curId&&confirm("Delete this promotion?")){const r=await api("/api/promotions/"+curId,{method:"DELETE"});if(r.ok){clearForm();loadList();show("good","Deleted.")}else show("err",esc(r.data.detail))}};
+  $("btnDel").onclick=async()=>{if(curId&&confirm("Delete this promotion?")){const r=await api("/api/promotions/"+curId,{method:"DELETE"});if(r.ok){clearForm();loadList();loadHotspots();show("good","Deleted.")}else show("err",esc(r.data.detail))}};
   $("btnClear").onclick=clearForm;
   clearOut();loadList();loadHotspots()}
 init();

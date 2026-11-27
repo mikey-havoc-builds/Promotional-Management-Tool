@@ -105,15 +105,27 @@ def test_selection_counts(client):   # keep last: it rewrites abc's replen rows
         assert client.post("/api/preview", json=BASE).json()["in_cdc"] == "No"
 
 
-def test_hotspots_panel(client):
-    r = client.get("/api/hotspots", params={"month": "2027-01-01"}).json()
-    names = {x["name"]: x for x in r["rows"]}
-    assert names["Hero Spot"]["spots"] == 1 and names["Aisle End - Hotspot 3"]["spots"] == 4
-    assert "Shelf Only" in names and names["Shelf Only"]["spots"] is None and not r["locked"]
-    put = lambda **kw: client.put("/api/hotspots/used", json={"promo_month": "2027-01-01", "hotspot_name": "Hero Spot", **kw})
-    assert put(used=1).json()["saved"]
-    assert next(x for x in client.get("/api/hotspots", params={"month": "2027-01-01"}).json()["rows"] if x["name"] == "Hero Spot")["used"] == 1
-    assert put(used=-1).status_code == 422
-    assert put(used=None).json()["saved"]                                     # cleared
-    assert client.put("/api/hotspots/used", json={"promo_month": "2027-01-01", "hotspot_name": "Nope", "used": 1}).status_code == 404
-    assert client.put("/api/hotspots/used", json={"promo_month": "2020-01-01", "hotspot_name": "Hero Spot", "used": 1}).status_code == 422
+def test_hotspots_panel_used_counts_products(client):
+    month = "2026-12-01"
+    rows = {x["name"]: x for x in client.get("/api/hotspots", params={"month": month}).json()["rows"]}
+    assert rows["Hero Spot"]["spots"] == 1 and rows["Aisle End - Hotspot 3"]["spots"] == 4
+    assert rows["Shelf Only"]["spots"] is None
+    assert all(x["used"] == 0 for x in rows.values())
+    # hotspot dropdown now offers the positions
+    assert "Aisle End - Hotspot 3" in client.get("/api/lists").json()["hotspot"]
+    body = {**BASE, "hotspot": "Hero Spot"}                       # Hero Spot has 1 spot
+    assert client.post("/api/promotions", json=body).json()["saved"]
+    assert client.post("/api/promotions", json={**body, "product_code": "def"}).json().get("saved") is not None
+    rows = {x["name"]: x for x in client.get("/api/hotspots", params={"month": month}).json()["rows"]}
+    assert rows["Hero Spot"]["used"] >= 1 and rows["Aisle End - Hotspot 3"]["used"] == 0
+
+
+def test_position_hotspot_uses_type_for_calcs(client):
+    # a specific position ('Aisle End - Hotspot 3') still picks branches / counts SKUs by its type ('Aisle End')
+    a = client.post("/api/preview", json={**BASE, "hotspot": "Aisle End - Hotspot 3"}).json()
+    b = client.post("/api/preview", json=BASE).json()
+    assert [l["code"] for l in a["locations"]] == [l["code"] for l in b["locations"]] and a["locations"]
+    assert client.post("/api/promotions", json={**BASE, "hotspot": "Aisle End - Hotspot 3"}).json()["saved"]
+    assert client.post("/api/preview", json={**BASE, "product_code": "def", "hotspot": "Aisle End - Hotspot 1"}).json()["skus_in_hotspot"] == 1
+    rows = {x["name"]: x for x in client.get("/api/hotspots", params={"month": "2026-12-01"}).json()["rows"]}
+    assert rows["Aisle End - Hotspot 3"]["used"] == 1
